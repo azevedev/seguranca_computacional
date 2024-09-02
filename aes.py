@@ -1,4 +1,4 @@
-from typing import List, Union, Tuple, Any, Generator
+from typing import Any, List, Union
 from itertools import chain
 
 
@@ -49,7 +49,7 @@ R_Con = (
     0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91,
 )
 
-def swap_byte(byte: int, box: List[List[bytes]]) -> bytes:
+def swap_byte(byte: int, box: List[List[bytes]]):
     byte = hex(byte)[2:]
     if len(byte) == 1:
         byte = '0' + byte
@@ -66,7 +66,7 @@ def sub_bytes(state, box):
         newStateArray.append(new_row)
     return newStateArray
 
-def shift_rows(state: List[List[bytes]], invert: bool = False) -> List[List[bytes]]:
+def shift_rows(state: List[List[bytes]], invert: bool = False):
     if(invert):
         state[0][1], state[1][1], state[2][1], state[3][1] = state[3][1], state[0][1], state[1][1], state[2][1]
         state[0][2], state[1][2], state[2][2], state[3][2] = state[2][2], state[3][2], state[0][2], state[1][2]
@@ -81,7 +81,7 @@ def shift_rows(state: List[List[bytes]], invert: bool = False) -> List[List[byte
 # method from https://crypto.stackexchange.com/questions/14902/understanding-multiplication-in-the-aes-specification
 def xtime(a): return (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 
-def mix_columns(state:  List[List[bytes]], invert: bool = False) -> list:
+def mix_columns(state:  List[List[bytes]], invert: bool = False):
     result = []
     if(invert):
         for s in state:
@@ -103,13 +103,7 @@ def mix_columns(state:  List[List[bytes]], invert: bool = False) -> list:
     return result
 
 
-def add_round_key(state: List[List[bytes]], round_key: List[Union[List[List[int]], List[list]]]) -> list:
-    """
-    Applies the current round key to the state matrix.
-    :param state: the current state matrix
-    :param round_key: the current round key
-    :return: the new state after the round key has been applied
-    """
+def add_round_key(state: List[List[bytes]], round_key: List[Union[List[List[int]], List[list]]]):
     new_state = []
     for r1, r2 in zip(state, round_key):
         new_col = []
@@ -120,13 +114,7 @@ def add_round_key(state: List[List[bytes]], round_key: List[Union[List[List[int]
 
 
 
-def cycle(state: List[List[bytes]], round_key: List[Union[List[List[int]], List[list]]], invert: bool = False) -> List[List[int]]:
-    """
-    Performs a complete round over a block using the provided roundkey
-    :param state: the state matrix before the round transformations
-    :param round_key: the round key to use for this round
-    :return: state matrix after the round transformations have been applied
-    """
+def cycle(state: List[List[bytes]], round_key: List[Union[List[List[int]], List[list]]], invert: bool = False):
     if(invert):
         state = shift_rows(state, invert=True)
         state = sub_bytes(state, SBoxInv)
@@ -140,13 +128,7 @@ def cycle(state: List[List[bytes]], round_key: List[Union[List[List[int]], List[
     return state
 
 
-def encrypt_block(data: bytes, round_keys: List[Union[List[List[int]], List[list]]], nr: int) -> bytes:
-        """
-        Performs encryption of a single block of the AES algorithm, unlike the encrypt method which will encrypt at
-        least two blocks as it adds padding
-        :param data:
-        :return: encrypted block
-        """
+def encrypt_block(data: bytes, round_keys: List[Union[List[List[int]], List[list]]], nr: int):
         k, m = divmod(len(data), 4)
         state = list(data[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(4))
         state = add_round_key(state, round_keys[0])
@@ -162,12 +144,7 @@ def encrypt_block(data: bytes, round_keys: List[Union[List[List[int]], List[list
 
         return state
 
-def decrypt_block(data: bytes, round_keys: List[Union[List[List[int]], List[list]]], nr: int) -> bytes:
-        """
-        Performs decryption of a single block of the AES algorithm
-        :param data:
-        :return: encrypted block
-        """
+def decrypt_block(data: bytes, round_keys: List[Union[List[List[int]], List[list]]], nr: int):
         k, m = divmod(len(data), 4)
         state = list(data[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(4))
         state = add_round_key(state, round_keys[-1])
@@ -184,24 +161,12 @@ def decrypt_block(data: bytes, round_keys: List[Union[List[List[int]], List[list
 
         return state
 
-def generate_confusion(block: List[int], rc: bytes) -> List[bytes]:
-    """
-    Performs the confusion step when expanding the key to roundkeys
-    :param block: the block to operate on
-    :param rc: the rcon value to use
-    :return: the transformed block
-    """
+def generate_confusion(block: List[int], rc: bytes):
     block = [swap_byte(b, SBox) for b in block[1:] + [block[0]]]
     return [block[0] ^ rc] + block[1:]
 
 
-def expand_key(key: bytes, nk: int = 4, nr: int = 10, nb: int = 4) -> List[Tuple[Any]]:
-        """
-        Performs operations to expand the key into the respective round keys.
-        Uses class fields to determine how many keys to produce.
-        :param key: the original key
-        :return: list containing the expanded keys
-        """
+def expand_key(key: bytes, nk: int = 4, nr: int = 10, nb: int = 4):
         w = []
         for i in range(nk):
             w.append([key[4 * i], key[4 * i + 1], key[4 * i + 2], key[4 * i + 3]])
@@ -219,13 +184,12 @@ NUM_WORDS = {16: 4, 24: 6, 32: 8, 48: 12, 64: 16}
 
 ECB = 1
 CTR = 2
-GCM = 3
 
-def bytes_to_chunk(l: List[Any], n: int) -> Generator:
+def bytes_to_chunk(l: List[Any], n: int):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-def init(key: bytes, data: bytes, number_rounds=10, mode=ECB, counter_initial=0, counter_increment=1) -> bytes:
+def init(key: bytes, data: bytes, number_rounds=10, mode=ECB, counter_initial=0, counter_increment=1):
         
         if len(key) != 16:
             raise ValueError("Only 128 bit keys are supported!")
@@ -234,7 +198,7 @@ def init(key: bytes, data: bytes, number_rounds=10, mode=ECB, counter_initial=0,
             pad_len = 16 - (len(data) % 16)
             data = data + bytes([0] * pad_len)
 
-        if mode != CTR and mode != ECB and mode != GCM:
+        if mode != CTR and mode != ECB:
             raise ValueError("Unsupported mode!")
 
         number_bytes = 4 # Fixed to 32bit
@@ -272,69 +236,3 @@ def init(key: bytes, data: bytes, number_rounds=10, mode=ECB, counter_initial=0,
 
 
         return cipher, decryted
-
-
-#testing code
-# expected = bytes([0x29, 0xC3, 0x50, 0x5F, 0x57, 0x14, 0x20, 0xF6, 0x40, 0x22, 0x99, 0xB3, 0x1A, 0x02, 0xD7, 0x3A])
-# print("expected: ", expected.decode("latin-1"))
-# decoded = [b.decode("utf-8") for b in expected]
-# print(decoded)
-# data = bytes([0x54, 0x77, 0x6F, 0x20, 0x4F, 0x6E, 0x65, 0x20, 0x4E, 0x69, 0x6E, 0x65, 0x20, 0x54, 0x77, 0x6F])
-# data = b'this is my plaintext7865263748502'
-# in_file = open("foto-perfil.jpeg", "rb") # opening for [r]eading as [b]inary
-# data = in_file.read() # if you only wanted to read 512 bytes, do .read(512)
-# print("data: ", data)
-# print(type(data))
-# in_file.close()
-# print("data: ", data.decode("latin-1"))
-# key = bytes([0x54, 0x68, 0x61, 0x74, 0x73, 0x20, 0x6D, 0x79, 0x20, 0x4B, 0x75, 0x6E, 0x67, 0x20, 0x46, 0x75])
-# key = b'MySecretKey59283'
-# print("key: ", key.decode("latin-1"))
-# actual_cypher, actual_decryted = init(key, data, 13)
-# plaintext = base64.b64encode(actual_cypher).decode('ASCII')
-# print("actual_cypher: ", plaintext)
-# out_file = open("out-file.txt", "wb") # open for [w]riting as [b]inary
-# out_file.write(str.encode(plaintext))
-# out_file.close()
-# print("actual_cypher: ", actual_cypher)
-# print("actual_decryted: ", actual_decryted)
-# equals1 = actual_cypher == expected
-## showing results
-# plaintext1 = base64.b64encode(actual_cypher).decode('ASCII')
-# plaintext2 = actual_decryted.decode("utf-8")
-# print("Actual 1: " + plaintext1)
-# print("Decrypt 1: " + plaintext2)
-
-
-# data = bytes(bytearray.fromhex('00112233445566778899aabbccddeeff'))
-# print(data)
-# key = bytes(bytearray.fromhex('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f'))
-# print(key)
-# expected = bytes(bytearray.fromhex('8ea2b7ca516745bfeafc49904b496089'))
-# actual_cypher = init(key, data)
-# equals2 = actual_cypher == expected
-# ## showing results
-# print("Actual 2: " + str(actual_cypher))
-# print("Expected 2: " + str(expected))
-
-
-# expected = b'Hello, World!123'
-# print(expected)
-# print(expected.decode("latin-1"))
-# data = b'Hello, World!123'
-# print(data.decode("latin-1"))
-# key = bytes([0x54, 0x68, 0x61, 0x74, 0x73, 0x20, 0x6D, 0x79, 0x20, 0x4B, 0x75, 0x6E, 0x67, 0x20, 0x46, 0x75])
-# print(key.decode("latin-1"))
-# actual_cypher = init(key, data)
-# equals3 = actual_cypher == expected
-# ## showing results
-# print(actual_cypher)
-# return base64.b64encode(value).decode('ASCII')
-
-# decoc = actual_cypher.decode('utf-16')
-# print(decoc)
-# print("Actual 3: " + actual_cypher.decode('cp1252'))
-# print("Expected 3: " + str(expected))
-
-
-# print("Equals? " + str(equals1 and equals2 and equals3))

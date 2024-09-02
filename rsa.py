@@ -1,8 +1,6 @@
 # https://en.wikipedia.org/wiki/RSA_(cryptosystem)#Key_generation
 
-import base64
 from math import gcd
-import random
 import numpy as np
 
 def findD(e: int, phi: int) -> int:
